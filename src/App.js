@@ -1,12 +1,13 @@
 import './App.css';
 import Web3 from 'web3';
-
 import React, { useEffect, useState } from 'react';
 
 import PhotoSharing from './build/contracts/PhotoSharing.json';
 import AddPost from './components/AddPost';
+import Posts from './components/Posts';
 
 import {create} from 'ipfs-http-client';
+import { Buffer } from 'buffer';
 
 function App() {
 
@@ -26,6 +27,7 @@ function App() {
   const [account, setAccount] = useState('');
   const [photoSharing, setPhotoSharing] = useState(null); 
   const [loading, setLoading] = useState(true);
+  const [images, setImages] = useState([]);
 
   const loadBlockchain = async () => {
     const web3 = window.web3;
@@ -44,8 +46,16 @@ function App() {
 
       setPhotoSharing(photoSharing);
 
-      setLoading(false);
+      const imageLength = await photoSharing.methods.imageCount().call();
 
+      for (let i = 0; i <= imageLength; i++) {
+        const image = await photoSharing.methods.images(i).call();
+
+        if (image.hash !== '') {
+          setImages((previous) => [...previous, image]);
+        }
+      }
+      setLoading(false);
     } else {
       window.alert('Photo Sharing contract not deployed to that network.');
     }
@@ -56,13 +66,12 @@ function App() {
     loadBlockchain();
   }, []);
 
-  const client = create('https://ipfs.infura.io:5001/api/v0');
-
   const [bufferImage, setBufferImage] = useState(null);
 
   let bufferedImage;
 
   const captureFile = (event) => {
+
     event.preventDefault();
     const file = event.target.files[0];
     const reader = new window.FileReader();
@@ -73,6 +82,20 @@ function App() {
       setBufferImage(bufferedImage);
     }
   }
+
+  const projectId = process.env.REACT_APP_PROJECT_ID;
+  const apiKey = process.env.REACT_APP_API_KEY;
+
+  const auth = 'Basic ' + Buffer.from(projectId + ':' + apiKey).toString('base64');
+
+  const client = create({
+    host: 'ipfs.infura.io',
+    port: 5001,
+    protocol: 'https',
+    headers : {
+      authorization: auth,
+    },
+  })
 
   const uploadImage = async (description) => {
     try {
@@ -85,6 +108,8 @@ function App() {
       await photoSharing.methods.uploadImage(createdImage.path, description).send({ from: account });
 
       setLoading(false);
+
+      window.location.reload();
 
     } catch (error) {
       console.log(error);
@@ -100,6 +125,7 @@ function App() {
         <>
         <p>Loaded</p>
         <AddPost uploadImage={uploadImage} captureFile={captureFile} />
+        <Posts posts={images} />
         </>
       )}     
 
