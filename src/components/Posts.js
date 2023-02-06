@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 
-const Posts = ({ posts }) => {
+const Posts = ({ posts, likePost }) => {
     return (
         <div>
             {posts.length > 0 && posts.map((image, index) => (
@@ -15,6 +15,20 @@ const Posts = ({ posts }) => {
 
                     <p>{image.description}</p>
                     <p>@{image.uploader}</p>
+
+                    <div>
+                        <p>Likes: {image.likes.toString() }</p>
+
+                        <button
+                            onClick={() => {
+                                const amountOfLikesToAdd = 1;
+
+                                likePost(image.id, amountOfLikesToAdd);
+                            }}
+                        >
+                            Like
+                        </button>
+                    </div>
                 </div>
             ))}
         </div>
@@ -23,6 +37,7 @@ const Posts = ({ posts }) => {
 
 Posts.propTypes = {
     posts: PropTypes.array.isRequired,
+    likePost: PropTypes.func.isRequired
 };
 
 export default Posts;

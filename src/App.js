@@ -116,6 +116,22 @@ function App() {
     }
   }
 
+  const likePost = async (id, amountOfLikesToAdd) => {
+    try {
+      setLoading(true);
+
+      await photoSharing.methods.likePost(id).send({ from: account, value: 1 });
+
+      setLoading(false);
+
+      window.location.reload();
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
+      
+
   return (
     <div >
 
@@ -125,7 +141,7 @@ function App() {
         <>
         <p>Loaded</p>
         <AddPost uploadImage={uploadImage} captureFile={captureFile} />
-        <Posts posts={images} />
+        <Posts posts={images} likePost = {likePost} />
         </>
       )}     
 
