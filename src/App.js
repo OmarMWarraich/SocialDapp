@@ -4,6 +4,9 @@ import Web3 from 'web3';
 import React, { useEffect, useState } from 'react';
 
 import PhotoSharing from './build/contracts/PhotoSharing.json';
+import AddPost from './components/AddPost';
+
+import {create} from 'ipfs-http-client';
 
 function App() {
 
@@ -51,7 +54,42 @@ function App() {
   useEffect(() => {
     loadWeb3();
     loadBlockchain();
-  });
+  }, []);
+
+  const client = create('https://ipfs.infura.io:5001/api/v0');
+
+  const [bufferImage, setBufferImage] = useState(null);
+
+  let bufferedImage;
+
+  const captureFile = (event) => {
+    event.preventDefault();
+    const file = event.target.files[0];
+    const reader = new window.FileReader();
+    reader.readAsArrayBuffer(file);
+
+    reader.onloadend = async () => {
+      bufferedImage = await Buffer(reader.result);
+      setBufferImage(bufferedImage);
+    }
+  }
+
+  const uploadImage = async (description) => {
+    try {
+
+      setLoading(true);
+
+      const createdImage = await client.add(bufferImage);
+      const url = `https://ipfs.infura.io/ipfs/${createdImage.path}`;
+
+      await photoSharing.methods.uploadImage(createdImage.path, description).send({ from: account });
+
+      setLoading(false);
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   return (
     <div >
@@ -59,7 +97,10 @@ function App() {
       { loading ? (
         <p>Loading </p>
       ) : (
+        <>
         <p>Loaded</p>
+        <AddPost uploadImage={uploadImage} captureFile={captureFile} />
+        </>
       )}     
 
     </div>
